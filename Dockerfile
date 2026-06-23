@@ -1,27 +1,32 @@
-# Используем официальный образ SQL Server Express
-FROM mcr.microsoft.com/mssql/server:2022-latest AS sql
+# Базовый образ с SQL Server Express
+FROM mcr.microsoft.com/mssql/server:2022-latest
 
-# Переменные для SQL Server (пароль должен быть сложным!)
+# Переменные для SQL Server (обязательны!)
 ENV ACCEPT_EULA=Y
 ENV MSSQL_SA_PASSWORD=YourStrong!Passw0rd
 ENV MSSQL_PID=Express
 
-# Создаём папку для приложения
+# Переключаемся на root, чтобы иметь права на запуск SQL Server
+USER root
+
+# Устанавливаем рабочую папку
 WORKDIR /app
 
-# Копируем ваш исполняемый файл (или исходники)
-# Сначала скопируйте ваш скомпилированный бинарник (например, app)
+# Копируем ваш скомпилированный бинарник
 COPY app /app/app
 
-# Создаём скрипт для запуска SQL Server и приложения
+# Даём права на выполнение
+RUN chmod +x /app/app
+
+# Создаём скрипт запуска
 RUN echo '#!/bin/bash\n\
 /opt/mssql/bin/sqlservr & \n\
 sleep 30 \n\
 /app/app' > /app/start.sh && chmod +x /app/start.sh
 
-# Открываем порты для SQL Server и приложения
+# Открываем порты
 EXPOSE 1433
 EXPOSE 10000
 
-# Запускаем скрипт
+# Запускаем скрипт от имени root
 CMD ["/app/start.sh"]
